@@ -1,0 +1,23 @@
+name: cloud_audio_player
+description: A Flutter Audio Player plugin for android using ExoPlayer. Currently supports on only Android.
+version: 0.0.1
+author: Md. Abdur Rouf <official.rouf69nb@gmail.com>
+homepage: https://github.com/official-rouf69nb/packages-audio_player
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+
+  plugin:
+    androidPackage: com.rouf69nb.cloud_audio_player
+    pluginClass: CloudAudioPlayerPlugin
