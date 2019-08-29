@@ -7,7 +7,7 @@ class CloudAudioPlayer {
   static const MethodChannel _channel = const MethodChannel('com.rouf69nb.cloud_audio_player/player');
   Function(CloudPlayerState status) _statusListener;
   Function(double bufferedPercent) _bufferListener;
-  Function(double progressPercent) _progressListener;
+  Function(double progressPercent, int totalDuration, int currentDuration) _progressListener;
 
 
   CloudAudioPlayer(){
@@ -16,7 +16,7 @@ class CloudAudioPlayer {
   void addListeners({
     Function(CloudPlayerState status) statusListener,
     Function(double bufferedPercent) bufferListener,
-    Function(double progressPercent) progressListener,
+    Function(double progressPercent, int totalDuration, int currentDuration) progressListener,
   }){
     _statusListener = statusListener;
     _bufferListener = bufferListener;
@@ -24,6 +24,15 @@ class CloudAudioPlayer {
   }
   static Future<double> getDeviceMediaVolume(){
     return _channel.invokeMethod("getVolume");
+  }
+  static void setVolume(double volume){
+    if(volume >= 0 && volume <= 1.0)
+    {
+      _channel.invokeMethod("setVolume",{"volume":volume});
+    }else
+    {
+      print("************************************\nVolume should between 0.0 to 1.0\n************************************");
+    }
   }
 
 
@@ -43,16 +52,6 @@ class CloudAudioPlayer {
     _channel.invokeMethod("stop");
   }
 
-
-  void setVolume(double volume){
-    if(volume >= 0 && volume <= 1.0)
-    {
-      _channel.invokeMethod("setVolume",{"volume":volume});
-    }else
-    {
-      print("************************************\nVolume should between 0.0 to 1.0\n************************************");
-    }
-  }
   void setSpeed(double speed){
     if(speed >= 0.3 && speed <= 3.0)
     {
@@ -75,6 +74,14 @@ class CloudAudioPlayer {
     return _channel.invokeMethod("getStatus");
   }
 
+  Future<int> getTotalDuration(){
+    return _channel.invokeMethod("getTotalDuration");
+  }
+
+  Future<int> getCurrentPosition(){
+    return _channel.invokeMethod("getCurrentPosition");
+  }
+
 
 
   //=============== player event ===============
@@ -87,7 +94,12 @@ class CloudAudioPlayer {
         _bufferListener?.call(call.arguments);
         break;
       case "onProgressChanged":
-        _progressListener?.call(call.arguments);
+        {
+          double _progress = call.arguments["progressPercent"];
+          int _totalDuration= call.arguments["totalDuration"];
+          int _currentPosition = call.arguments["currentPosition"];
+          _progressListener?.call(_progress,_totalDuration < 0 ? 0:_totalDuration,_currentPosition <0 ? 0:_currentPosition);
+        }
         break;
       default:
         print("********Others method*********** => ${call.arguments}");

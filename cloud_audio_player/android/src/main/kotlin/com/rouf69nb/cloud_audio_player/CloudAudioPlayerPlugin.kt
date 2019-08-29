@@ -42,7 +42,7 @@ class CloudAudioPlayerPlugin(registrar: Registrar, private val channel: MethodCh
         result.success(null)
       }
       "setVolume"->{
-        player.setVolume(call.argument<Float>("volume")!!)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * call.argument<Float>("volume")!!).toInt(), 0)
         result.success(null)
       }
       "setSpeed"->{
@@ -59,6 +59,12 @@ class CloudAudioPlayerPlugin(registrar: Registrar, private val channel: MethodCh
       }
       "getStatus"->{
         result.success(player.getStatus.name)
+      }
+      "getTotalDuration"->{
+        result.success(player.getTotalDuration)
+      }
+      "getCurrentPosition"->{
+        result.success(player.getCurrentPosition)
       }
       "dispose"->{
         player.dispose()
@@ -77,7 +83,7 @@ class CloudAudioPlayerPlugin(registrar: Registrar, private val channel: MethodCh
   override fun onBufferingChanged(bufferPercent: Float) {
     channel.invokeMethod("onBufferingChanged",bufferPercent)
   }
-  override fun onProgressChanged(percent: Float) {
-    channel.invokeMethod("onProgressChanged",percent)
+  override fun onProgressChanged(percent: Float, totalDuration:Long, currentPosition:Long) {
+    channel.invokeMethod("onProgressChanged",hashMapOf("progressPercent" to percent, "totalDuration" to totalDuration, "currentPosition" to currentPosition))
   }
 }

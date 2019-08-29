@@ -90,7 +90,11 @@ class AudioPlayer(private val context: Context, private val listener: AudioPlaye
     private fun updatePlayerStateChanged(playbackState: Int, playWhenReady: Boolean) {
         status = when (playbackState) {
             Player.STATE_BUFFERING -> PlaybackStatus.LOADING
-            Player.STATE_ENDED -> PlaybackStatus.COMPLETED
+            Player.STATE_ENDED ->
+            {
+                shouldUpdatePlaybackProgress = false
+                PlaybackStatus.COMPLETED
+            }
             Player.STATE_READY -> if (playWhenReady) {
                 shouldUpdatePlaybackProgress = true
                 PlaybackStatus.PLAYING
@@ -98,15 +102,18 @@ class AudioPlayer(private val context: Context, private val listener: AudioPlaye
                 shouldUpdatePlaybackProgress = false
                 PlaybackStatus.PAUSED
             }
-            else -> PlaybackStatus.IDLE
+            else -> {
+                shouldUpdatePlaybackProgress = false
+                PlaybackStatus.IDLE
+            }
         }
         //Invoke listener
         listener.onStatusChanged(status)
     }
     private fun updatePlaybackProgress(){
         if(shouldUpdatePlaybackProgress && exoPlayer.duration > 0) {
-            val progressInPercent = (exoPlayer.currentPosition.toFloat() * 100f).toFloat() / exoPlayer.duration.toFloat()
-            listener.onProgressChanged(progressInPercent)
+            val progressInPercent = (exoPlayer.currentPosition.toFloat() * 100f) / exoPlayer.duration.toFloat()
+            listener.onProgressChanged(progressInPercent,exoPlayer.duration, exoPlayer.currentPosition)
         }
     }
     private fun updateBufferProgress(){
@@ -121,6 +128,14 @@ class AudioPlayer(private val context: Context, private val listener: AudioPlaye
     // get player status
     var getStatus:PlaybackStatus = status
         get() = status
+        private set
+
+    var getTotalDuration:Long = 0
+        get()= exoPlayer.duration
+        private set
+
+    var getCurrentPosition:Long = 0
+        get()= exoPlayer.currentPosition
         private set
 
     // create media source
@@ -144,7 +159,7 @@ class AudioPlayer(private val context: Context, private val listener: AudioPlaye
             exoPlayer.stop()
             exoPlayer.prepare(mediaSource)
             exoPlayer.playWhenReady = requestAudioFocus()
-            listener.onProgressChanged(0f)
+            listener.onProgressChanged(0f,exoPlayer.duration,0)
         }catch (e:Exception){
             status = PlaybackStatus.ERROR
             listener.onStatusChanged(status)
@@ -164,15 +179,11 @@ class AudioPlayer(private val context: Context, private val listener: AudioPlaye
         status = PlaybackStatus.STOPPED
         listener.onStatusChanged(status)
         listener.onBufferingChanged(0f)
-        listener.onProgressChanged(0f)
+        listener.onProgressChanged(0f,0,0)
     }
 
 
     // Settings
-    fun setVolume(value: Float){
-        if(value in 0.0..1.0)
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * value).toInt(), 0)
-    }
     fun setSpeed(value: Float){
         if(value in 0.5..2.5) {
             val param = PlaybackParameters(value)
@@ -239,7 +250,7 @@ enum class PlaybackStatus {
 interface AudioPlayerListener{
     fun onStatusChanged(status:PlaybackStatus)
     fun onBufferingChanged(bufferPercent:Float)
-    fun onProgressChanged(percent:Float)
+    fun onProgressChanged(percent:Float, totalDuration:Long, currentPosition:Long)
 }
 
 //

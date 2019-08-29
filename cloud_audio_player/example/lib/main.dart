@@ -147,7 +147,9 @@ class _MyAppState extends State<MyApp> {
     _player.pause();
   }
   void _onStop() {
-    _player.stop();
+    _player.getCurrentPosition().then((x){
+      print(x);
+    });
   }
 
 
@@ -165,7 +167,8 @@ class _MyAppState extends State<MyApp> {
       _buffered =bufferedPercent;
     });
   }
-  _onProgressUpdate(double progressPercent) {
+  _onProgressUpdate(double progressPercent, int totalDuration, int currentPosition) {
+    //print("$progressPercent=>$totalDuration=>$currentPosition");
     setState(() {
       _progress =progressPercent / 100;
     });
